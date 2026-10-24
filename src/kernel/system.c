@@ -37,8 +37,8 @@ OSMesg D_802C3318[1];
 s32 D_802C331C;
 OSMesg gPiMgrCmdBuf[8];
 OSMesgQueue gPiMgrCmdQ;
-OSContStatus gSiContStatus;
-UNUSED u8 D_802C3360[0x10];
+OSContStatus gSiContStatus[MAXCONTROLLERS];
+UNUSED u8 D_802C3360[4];
 OSContPad gControllerPads[6];
 u8 gSiContPattern;
 OSThread gAppThread;
@@ -340,7 +340,7 @@ u8 uvContMesgInit(void) {
     osRecvMesg(&mq, &dummy, OS_MESG_BLOCK);
     osCreateMesgQueue(&gSiContQ, gSiContBuf, ARRAY_COUNT(gSiContBuf));
     osSetEventMesg(OS_EVENT_SI, &gSiContQ, (void*)0x33333333);
-    osContInit(&gSiContQ, &gSiContPattern, &gSiContStatus);
+    osContInit(&gSiContQ, &gSiContPattern, gSiContStatus);
     temp = gSiContPattern;
     return temp;
 }

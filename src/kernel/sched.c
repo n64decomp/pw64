@@ -1,3 +1,4 @@
+#include <PR/os_vi.h>
 #include <uv_clocks.h>
 #include <uv_math.h>
 #include <uv_sched.h>
@@ -8,8 +9,8 @@
 #define RDP_DONE_MSG 668
 #define PRE_NMI_MSG 669
 
-Unk802B92A0 D_802B8940[5];
-Unk802B92A0 D_802B92A0[5];
+ScheduleEventLog gSchedCpuEvents[5][30];
+ScheduleEventLog gSchedRspEvents[5][30];
 s32 D_802B9C00[5];
 s32 D_802B9C18[5];
 f64 D_802B9C30[5];
@@ -32,10 +33,6 @@ s32 D_802B9C84;
 s32 D_802B9C88;
 
 s32 D_8024B260 = 0x2;
-
-extern OSViMode osViModeTable[];
-extern OSSched gSchedInst;
-extern s32 D_802B9C18[];
 
 void uvSc_8022B0A0(Unk8022B0A0* arg0, Mtx4F* arg1) {
     f32 temp_fa1;
@@ -92,24 +89,30 @@ void uvSc_8022B0A0(Unk8022B0A0* arg0, Mtx4F* arg1) {
 void _uvScDoneGfx(void) {
     OSScTask* scTask = D_802B9C60[D_802B9C6E];
 
-    if (gNmiAsserted == 0) {
-        if (scTask == NULL) {
-            _uvDebugPrintf("_uvScDoneGfx -- no gfx task\n");
-            _uvScLogIntoRing();
-            return;
-        }
-        if (D_802B9C6C == 0) {
-            if ((gSchedRspStatus == 'g') || (gSchedRdpStatus != 0)) {
-                _uvDebugPrintf("_uvScDoneGfx:  rsp [%c]    rdp [%c]\n", gSchedRspStatus, gSchedRdpStatus);
-            } else {
-                uvSc_8022C3C0(0, 0x32);
-                osSendMesg(scTask->msgQ, scTask->msg, 1);
-                D_802B9C68 = 1;
-                osViSwapBuffer(scTask->framebuffer);
-                D_802B9C60[D_802B9C6E] = NULL;
-            }
-        }
+    if (gNmiAsserted != 0) {
+        return;
     }
+
+    if (scTask == NULL) {
+        _uvDebugPrintf("_uvScDoneGfx -- no gfx task\n");
+        _uvScLogIntoRing();
+        return;
+    }
+
+    if (D_802B9C6C != 0) {
+        return;
+    }
+
+    if ((gSchedRspStatus == 'g') || (gSchedRdpStatus != 0)) {
+        _uvDebugPrintf("_uvScDoneGfx:  rsp [%c]    rdp [%c]\n", gSchedRspStatus, gSchedRdpStatus);
+        return;
+    }
+
+    uvSc_8022C3C0(FALSE, EVENT_ID_KERNEL_WAKEUP);
+    osSendMesg(scTask->msgQ, scTask->msg, 1);
+    D_802B9C68 = 1;
+    osViSwapBuffer(scTask->framebuffer);
+    D_802B9C60[D_802B9C6E] = NULL;
 }
 
 void _uvScDoneAud(void) {
@@ -117,7 +120,7 @@ void _uvScDoneAud(void) {
         _uvDebugPrintf("_uvScDoneAud: no audio task\n");
         return;
     }
-    uvSc_8022C3C0(1, 0x2C);
+    uvSc_8022C3C0(TRUE, EVENT_ID_AUDIO_DONE);
     if (gNmiAsserted == 0) {
         osSendMesg(D_802B9C58->msgQ, D_802B9C58->msg, 1);
     }
@@ -128,43 +131,54 @@ void _uvScDoneAud(void) {
 }
 
 void _uvScRunAud(void) {
-    if (gNmiAsserted == 0) {
-        if (D_802B9C58 == NULL) {
-            _uvDebugPrintf("_uvScRunAud -- no audio task\n");
-            return;
-        }
-        gSchedRspStatus = 'a';
-        uvSc_8022C3C0(1, 0x29);
-        osWritebackDCacheAll();
-        osSpTaskLoad(&D_802B9C58->list);
-        osSpTaskStartGo(&D_802B9C58->list);
+    if (gNmiAsserted != 0) {
+        return;
     }
+
+    if (D_802B9C58 == NULL) {
+        _uvDebugPrintf("_uvScRunAud -- no audio task\n");
+        return;
+    }
+
+    gSchedRspStatus = 'a';
+    uvSc_8022C3C0(TRUE, EVENT_ID_AUDIO_START);
+    osWritebackDCacheAll();
+    osSpTaskLoad(&D_802B9C58->list);
+    osSpTaskStartGo(&D_802B9C58->list);
 }
 
 void _uvScRunGfx(void) {
     OSScTask* scTask;
 
     scTask = D_802B9C60[D_802B9C6E];
-    if ((gNmiAsserted == 0) || (D_802B9C6C != 0)) {
-        if (scTask == NULL) {
-            _uvDebugPrintf("_uvScRunGfx -- no gfx task\n");
-            return;
-        }
-        if ((gSchedRspStatus != 'g') && ((D_802B9C6C != 0) || (gSchedRdpStatus != 'g'))) {
-            if (osViGetCurrentFramebuffer() == osViGetNextFramebuffer()) {
-                gSchedRspStatus = 'g';
-                if (D_802B9C6C == 0) {
-                    D_802B9C74 += 1;
-                    gSchedRdpStatus = 'g';
-                }
-                uvSc_8022C3C0(1, 0x2A);
-                D_802B9C6C = D_802B9C6B = 0;
-                osWritebackDCacheAll();
-                osSpTaskLoad(&scTask->list);
-                osSpTaskStartGo(&scTask->list);
-            }
-        }
+    if (gNmiAsserted != 0 && D_802B9C6C == 0) {
+        return;
     }
+
+    if (scTask == NULL) {
+        _uvDebugPrintf("_uvScRunGfx -- no gfx task\n");
+        return;
+    }
+
+    if (gSchedRspStatus == 'g' || (D_802B9C6C == 0 && gSchedRdpStatus == 'g')) {
+        return;
+    }
+
+    if (osViGetCurrentFramebuffer() != osViGetNextFramebuffer()) {
+        return;
+    }
+
+    gSchedRspStatus = 'g';
+    if (D_802B9C6C == 0) {
+        D_802B9C74++;
+        gSchedRdpStatus = 'g';
+    }
+
+    uvSc_8022C3C0(TRUE, EVENT_ID_GFX_START);
+    D_802B9C6C = D_802B9C6B = 0;
+    osWritebackDCacheAll();
+    osSpTaskLoad(&scTask->list);
+    osSpTaskStartGo(&scTask->list);
 }
 
 void _uvScDlistRecover(void) {
@@ -180,8 +194,8 @@ void _uvScDlistRecover(void) {
 }
 
 void _uvScCreateScheduler(OSSched* sc, void* stack, s32 priority, u8 mode, u8 numFields) {
-    ((OSScTask*)D_802B9C60)->state = 0;
-    ((OSScTask*)D_802B9C60)->next = 0;
+    D_802B9C60[1] = 0;
+    D_802B9C60[0] = 0;
     D_802B9C58 = 0;
     D_802B9C68 = 0;
     gSchedRspStatus = 0;
@@ -274,81 +288,89 @@ void _uvScHandleRetrace(void) {
 
     msg = NULL;
     uvClkUpdate();
-    if (gNmiAsserted == 0) {
-        D_802B9C84 = 1;
-        if (gSchedRspStatus) {
-            D_802B9C70 += 1;
+    if (gNmiAsserted != 0) {
+        return;
+    }
+
+    D_802B9C84 = 1;
+    if (gSchedRspStatus) {
+        D_802B9C70++;
+    } else {
+        D_802B9C70 = 0;
+    }
+
+    if (gSchedRdpStatus) {
+        D_802B9C6F++;
+    } else {
+        D_802B9C6F = 0;
+    }
+
+    if (D_802B9C70 >= 51) {
+        _uvDebugPrintf("RSP timeout on %c, sending wakeup...\n", gSchedRspStatus);
+        _uvScDlistRecover();
+        return;
+    }
+
+    if ((D_802B9C70 + 50) < D_802B9C6F) {
+        D_802B9C6F = 0;
+        _uvDebugPrintf("RDP timeout on %c [%d], sending wakeup...\n", gSchedRdpStatus, gSchedRdpStatus);
+        _uvScLogIntoRing();
+        osSendMesg(&gSchedInst.interruptQ, (OSMesg)RDP_DONE_MSG, OS_MESG_NOBLOCK);
+        return;
+    }
+
+    if (gSchedRspStatus == 'a') {
+        _uvDebugPrintf("_uvScHandleRetrace: audio still busy\n");
+        return;
+    }
+
+    if (D_802B9C68 != 0) {
+        D_802B9C68 = 0;
+        uvSc_8022C34C();
+        D_802B9C6E ^= 1;
+    }
+
+    while (osRecvMesg(&gSchedInst.cmdQ, (OSMesg)&msg, OS_MESG_NOBLOCK) != -1) {
+        if (msg == NULL) {
+            _uvDebugPrintf("received message with task of 0\n");
+            break;
+        }
+
+        taskType = msg->list.t.type;
+        if (taskType == M_GFXTASK) {
+            D_802B9C60[D_802B9C6D] = msg;
+            D_802B9C6D ^= 1;
+        } else if (taskType == M_AUDTASK) {
+            D_802B9C58 = msg;
         } else {
-            D_802B9C70 = 0;
+            _uvDebugPrintf("_uvScHandleRetrace: unkown task type 0x%x\n", msg);
         }
+    }
 
-        if (gSchedRdpStatus) {
-            D_802B9C6F += 1;
+    if (D_802B9C58 != NULL) {
+        if (gSchedRspStatus == 'g') {
+            if (D_802B9C6C != 0) {
+                _uvDebugPrintf("_uvScHandleRetrace:  2nd yield\n");
+            }
+            if (D_802B9C6B != 0) {
+                _uvDebugPrintf("_uvScHandleRetrace: gfx task didn't yield\n");
+                _uvScDlistRecover();
+                return;
+            }
+            D_802B9C6B = 1;
+            uvSc_8022C3C0(TRUE, EVENT_ID_YIELD_REQUEST);
+            osSpTaskYield();
         } else {
-            D_802B9C6F = 0;
+            _uvScRunAud();
         }
-        if (D_802B9C70 >= 51) {
-            _uvDebugPrintf("RSP timeout on %c, sending wakeup...\n", gSchedRspStatus);
-            _uvScDlistRecover();
-            return;
-        }
-        if ((D_802B9C70 + 50) < D_802B9C6F) {
-            D_802B9C6F = 0;
-            _uvDebugPrintf("RDP timeout on %c [%d], sending wakeup...\n", gSchedRdpStatus, gSchedRdpStatus);
-            _uvScLogIntoRing();
-            osSendMesg(&gSchedInst.interruptQ, (OSMesg)RDP_DONE_MSG, OS_MESG_NOBLOCK);
-            return;
-        }
-        if (gSchedRspStatus == 'a') {
-            _uvDebugPrintf("_uvScHandleRetrace: audio still busy\n");
-            return;
-        }
-        if (D_802B9C68 != 0) {
-            D_802B9C68 = 0;
-            uvSc_8022C34C();
-            D_802B9C6E ^= 1;
-        }
+    } else if (D_802B9C60[D_802B9C6E] != NULL) {
+        _uvScRunGfx();
+    }
 
-        while (osRecvMesg(&gSchedInst.cmdQ, (OSMesg)&msg, OS_MESG_NOBLOCK) != -1) {
-            if (msg == NULL) {
-                _uvDebugPrintf("received message with task of 0\n");
-                break;
-            }
-            taskType = msg->list.t.type;
-            if (taskType == M_GFXTASK) {
-                D_802B9C60[D_802B9C6D] = msg;
-                D_802B9C6D ^= 1;
-            } else if (taskType == M_AUDTASK) {
-                D_802B9C58 = msg;
-            } else {
-                _uvDebugPrintf("_uvScHandleRetrace: unkown task type 0x%x\n", msg);
-            }
-        }
-
-        if (D_802B9C58 != NULL) {
-            if (gSchedRspStatus == 'g') {
-                if (D_802B9C6C != 0) {
-                    _uvDebugPrintf("_uvScHandleRetrace:  2nd yield\n");
-                }
-                if (D_802B9C6B != 0) {
-                    _uvDebugPrintf("_uvScHandleRetrace: gfx task didn't yield\n");
-                    _uvScDlistRecover();
-                    return;
-                }
-                D_802B9C6B = 1;
-                uvSc_8022C3C0(1, 0x31);
-                osSpTaskYield();
-            } else {
-                _uvScRunAud();
-            }
-        } else if (D_802B9C60[D_802B9C6E] != NULL) {
-            _uvScRunGfx();
-        }
-        var_s0 = gSchedInst.clientList;
-        while (var_s0 != NULL) {
-            osSendMesg(var_s0->msgQ, &gSchedInst, 0);
-            var_s0 = var_s0->next;
-        }
+    var_s0 = gSchedInst.clientList;
+    while (var_s0 != NULL) {
+        osSendMesg(var_s0->msgQ, &gSchedInst, 0);
+        var_s0 = var_s0->next;
     }
 }
 
@@ -369,7 +391,7 @@ void _uvScHandleRSP(void) {
     if (D_802B9C6B != 0) {
         if (osSpTaskYielded(&D_802B9C60[D_802B9C6E]->list) != 0) {
             D_802B9C6C = 1;
-            uvSc_8022C3C0(1, 0x2D);
+            uvSc_8022C3C0(TRUE, EVENT_ID_GFX_YIELD);
             if (gNmiAsserted != 0) {
                 D_802B9C58 = 0;
                 D_802B9C6B = 0;
@@ -378,7 +400,7 @@ void _uvScHandleRSP(void) {
             }
 
         } else {
-            uvSc_8022C3C0(1, 0x2B);
+            uvSc_8022C3C0(TRUE, EVENT_ID_GFX_DONE);
         }
 
         D_802B9C6B = 0;
@@ -386,7 +408,7 @@ void _uvScHandleRSP(void) {
             _uvScRunAud();
         }
     } else {
-        uvSc_8022C3C0(1, 0x2B);
+        uvSc_8022C3C0(TRUE, EVENT_ID_GFX_DONE);
     }
 
     if ((gSchedRspStatus != 'g') && (gSchedRdpStatus == 0)) {
@@ -397,7 +419,7 @@ void _uvScHandleRSP(void) {
 void _uvScHandleRDP(void) {
     gSchedRdpStatus = 0;
     D_802B9C6F = 0;
-    uvSc_8022C3C0(1, 0x30);
+    uvSc_8022C3C0(TRUE, EVENT_ID_GFX_RDP_DONE);
     if ((gSchedRspStatus != 'g') && (D_802B9C6C == 0)) {
         _uvScDoneGfx();
     }
@@ -405,7 +427,7 @@ void _uvScHandleRDP(void) {
 
 void _uvScHandleNMI(void) {
     gNmiAsserted = 1;
-    osViBlack(1);
+    osViBlack(TRUE);
 }
 
 void uvSc_8022BEB8(s32 arg0) {
@@ -426,40 +448,40 @@ void _uvScLogCpuEvent(s32 arg0) {
     _uvDebugPrintf("-------- CPU events ---------\n");
 
     for (i = 0; i < D_802B9C00[arg0]; i++) {
-        _uvDebugPrintf("%d/%d time: %f ", i + 1, D_802B9C00[arg0], D_802B8940[arg0].unk0[i].unk0 - temp_fs0);
-        switch (D_802B8940[arg0].unk0[i].unk8) {
-        case 0x2A:
+        _uvDebugPrintf("%d/%d time: %f ", i + 1, D_802B9C00[arg0], gSchedCpuEvents[arg0][i].timestamp - temp_fs0);
+        switch (gSchedCpuEvents[arg0][i].eventID) {
+        case EVENT_ID_GFX_START:
             _uvDebugPrintf("gfx start\n");
             break;
-        case 0x2B:
+        case EVENT_ID_GFX_DONE:
             _uvDebugPrintf("gfx done\n");
             break;
-        case 0x2E:
+        case EVENT_ID_GFX_SCHED:
             _uvDebugPrintf("gfx sched\n");
             break;
-        case 0x32:
+        case EVENT_ID_KERNEL_WAKEUP:
             _uvDebugPrintf("kernel wakeup\n");
             break;
-        case 0x29:
+        case EVENT_ID_AUDIO_START:
             _uvDebugPrintf("audio start\n");
             break;
-        case 0x2C:
+        case EVENT_ID_AUDIO_DONE:
             _uvDebugPrintf("audio done\n");
             break;
-        case 0x2F:
+        case EVENT_ID_AUDIO_SCHED:
             _uvDebugPrintf("audio sched\n");
             break;
-        case 0x33:
+        case EVENT_ID_USER1:
             _uvDebugPrintf("user1\n");
             break;
-        case 0x34:
+        case EVENT_ID_USER2:
             _uvDebugPrintf("user2\n");
             break;
-        case 0x35:
+        case EVENT_ID_USER3:
             _uvDebugPrintf("user3\n");
             break;
         default:
-            _uvDebugPrintf("unknown type %d\n", D_802B8940[arg0].unk0[i].unk8);
+            _uvDebugPrintf("unknown type %d\n", gSchedCpuEvents[arg0][i].eventID);
             break;
         }
     }
@@ -467,50 +489,50 @@ void _uvScLogCpuEvent(s32 arg0) {
     _uvDebugPrintf("---------  RSP events ---------\n");
 
     for (i = 0; i < D_802B9C18[arg0]; i++) {
-        rspStatus = (u8)(D_802B92A0[arg0].unk0[i].unkC >> 0x18) & 0xFF;
+        rspStatus = (u8)(gSchedRspEvents[arg0][i].unkC >> 0x18) & 0xFF;
         if (rspStatus == 0) {
             rspStatus = ' ';
         }
-        rdpStatus = (u8)(D_802B92A0[arg0].unk0[i].unkC >> 0x10) & 0xFF;
+        rdpStatus = (u8)(gSchedRspEvents[arg0][i].unkC >> 0x10) & 0xFF;
         if (rdpStatus == 0) {
             rdpStatus = ' ';
         }
-        _uvDebugPrintf("%d/%d time: %f  sp: %2c  dp: %2c  st: 0x%x   ", i + 1, D_802B9C18[arg0], D_802B92A0[arg0].unk0[i].unk0 - temp_fs0, rspStatus, rdpStatus,
-                       D_802B92A0[arg0].unk0[i].unkC & 0xF);
+        _uvDebugPrintf("%d/%d time: %f  sp: %2c  dp: %2c  st: 0x%x   ", i + 1, D_802B9C18[arg0], gSchedRspEvents[arg0][i].timestamp - temp_fs0, rspStatus,
+                       rdpStatus, gSchedRspEvents[arg0][i].unkC & 0xF);
 
-        switch (D_802B92A0[arg0].unk0[i].unk8) {
-        case 0x2A:
+        switch (gSchedRspEvents[arg0][i].eventID) {
+        case EVENT_ID_GFX_START:
             _uvDebugPrintf("gfx start\n");
             break;
-        case 0x2B:
+        case EVENT_ID_GFX_DONE:
             _uvDebugPrintf("gfx rsp done\n");
             break;
-        case 0x2D:
+        case EVENT_ID_GFX_YIELD:
             _uvDebugPrintf("gfx yield\n");
             break;
-        case 0x31:
+        case EVENT_ID_YIELD_REQUEST:
             _uvDebugPrintf("yield request\n");
             break;
-        case 0x30:
+        case EVENT_ID_GFX_RDP_DONE:
             _uvDebugPrintf("gfx rdp done\n");
             break;
-        case 0x29:
+        case EVENT_ID_AUDIO_START:
             _uvDebugPrintf("audio start\n");
             break;
-        case 0x2C:
+        case EVENT_ID_AUDIO_DONE:
             _uvDebugPrintf("audio done\n");
             break;
-        case 0x33:
+        case EVENT_ID_USER1:
             _uvDebugPrintf("user1\n");
             break;
-        case 0x34:
+        case EVENT_ID_USER2:
             _uvDebugPrintf("user2\n");
             break;
-        case 0x35:
+        case EVENT_ID_USER3:
             _uvDebugPrintf("user3\n");
             break;
         default:
-            _uvDebugPrintf("unknown type %d\n", D_802B92A0[arg0].unk0[i].unk8);
+            _uvDebugPrintf("unknown type %d\n", gSchedRspEvents[arg0][i].eventID);
             break;
         }
     }
@@ -525,37 +547,41 @@ void _uvScLogIntoRing(void) {
         ring = (gSchedRingIdx + iter + 1) % 5;
         _uvDebugPrintf("============== ring %d   start time: %f ==============\n", ring, D_802B9C30[ring]);
         _uvScLogCpuEvent(ring);
-    };
+    }
+
     D_802B9C84 = 0;
 }
 
 void uvSc_8022C34C(void) {
-    gSchedRingIdx = gSchedRingIdx + 1;
+    gSchedRingIdx++;
     if (gSchedRingIdx >= 5) {
         gSchedRingIdx = 0;
     }
+
     D_802B9C30[gSchedRingIdx] = uvClkGetSec(UV_CLKID_SCHED);
     D_802B9C18[gSchedRingIdx] = 0;
     D_802B9C00[gSchedRingIdx] = 0;
 }
 
-void uvSc_8022C3C0(u8 arg0, s32 arg1) {
-    Unk802B92A0_Unk0* var_v0;
+void uvSc_8022C3C0(u8 arg0, s32 eventID) {
+    ScheduleEventLog* var_v0;
     u32 idx;
 
-    if (D_802B9C88) {
-        idx = gSchedRingIdx;
-        if ((D_802B9C00[idx] < 30) && (D_802B9C18[idx] < 30)) {
-            if (arg0 == 0) {
-                var_v0 = D_802B8940[idx].unk0;
-                var_v0 = &var_v0[D_802B9C00[idx]++];
-            } else {
-                var_v0 = D_802B92A0[idx].unk0;
-                var_v0 = &var_v0[D_802B9C18[idx]++];
-            }
-            var_v0->unk0 = uvClkGetSec(UV_CLKID_SCHED);
-            var_v0->unk8 = arg1;
-            var_v0->unkC = (gSchedRspStatus << 0x18) | (gSchedRdpStatus << 0x10) | (D_802B9C6B << 1) | D_802B9C6C;
+    if (D_802B9C88 == 0) {
+        return;
+    }
+
+    idx = gSchedRingIdx;
+    if ((D_802B9C00[idx] < 30) && (D_802B9C18[idx] < 30)) {
+        if (arg0 == FALSE) {
+            var_v0 = gSchedCpuEvents[idx];
+            var_v0 = &var_v0[D_802B9C00[idx]++];
+        } else {
+            var_v0 = gSchedRspEvents[idx];
+            var_v0 = &var_v0[D_802B9C18[idx]++];
         }
+        var_v0->timestamp = uvClkGetSec(UV_CLKID_SCHED);
+        var_v0->eventID = eventID;
+        var_v0->unkC = (gSchedRspStatus << 0x18) | (gSchedRdpStatus << 0x10) | (D_802B9C6B << 1) | D_802B9C6C;
     }
 }

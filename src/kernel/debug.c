@@ -184,7 +184,7 @@ STATIC_DATA Gfx* D_8024B740[] = {
 };
 
 f64 uvDbg_80231AC0(void) {
-    Unk802B92A0_Unk0* sp14;
+    ScheduleEventLog* sp14;
     s32 sp10;
     s32 spC;
     s32 sp8;
@@ -193,15 +193,15 @@ f64 uvDbg_80231AC0(void) {
     spC = (gSchedRingIdx + 1) % 5;
     sp8 = 0;
     for (sp10 = 0; sp10 < D_802B9C18[spC]; sp10++) {
-        sp14 = &D_802B92A0[spC].unk0[sp10];
+        sp14 = &gSchedRspEvents[spC][sp10];
         if (sp8 == 0) {
-            if (sp14->unk8 == 0x2A) {
+            if (sp14->eventID == EVENT_ID_GFX_START) {
                 sp8 = 1;
-                sp0 = sp14->unk0;
+                sp0 = sp14->timestamp;
             }
         } else {
-            if ((sp8 != 0) && (sp14->unk8 == 0x30)) {
-                return sp14->unk0 - sp0;
+            if ((sp8 != 0) && (sp14->eventID == EVENT_ID_GFX_RDP_DONE)) {
+                return sp14->timestamp - sp0;
             }
         }
     }
@@ -218,7 +218,7 @@ f64 uvDbg_80231C10(void) {
 }
 
 f64 uvDbg_80231C9C(void) {
-    Unk802B92A0_Unk0* sp2C;
+    ScheduleEventLog* sp2C;
     s32 sp28;
     s32 sp24;
     s32 sp20;
@@ -234,17 +234,17 @@ f64 uvDbg_80231C9C(void) {
     sp10 = 0.0;
 
     for (sp28 = 0; sp28 < D_802B9C00[sp24]; sp28++) {
-        sp2C = &D_802B8940[sp24].unk0[sp28];
-        sp0 = sp2C->unk0 - D_802B9C30[sp24];
+        sp2C = &gSchedCpuEvents[sp24][sp28];
+        sp0 = sp2C->timestamp - D_802B9C30[sp24];
         if (sp1C == 0) {
-            if (sp2C->unk8 == 0x2A) {
+            if (sp2C->eventID == EVENT_ID_GFX_START) {
                 sp1C = 1;
                 sp10 = sp0;
             }
-            if (sp2C->unk8 == 0x2B) {
+            if (sp2C->eventID == EVENT_ID_GFX_DONE) {
                 sp8 += sp0;
             }
-        } else if ((sp1C != 0) && (sp2C->unk8 == 0x2B)) {
+        } else if ((sp1C != 0) && (sp2C->eventID == EVENT_ID_GFX_DONE)) {
             sp1C = 0;
             sp8 += sp0 - sp10;
         }
@@ -480,7 +480,7 @@ void uvDbg_80232EBC(void) {
 }
 
 void uvDbg_80232ECC(s32 arg0, s32 arg1, u16 arg2, u8 arg3, u8 arg4, u8 arg5) {
-    Unk802B92A0_Unk0* sp4C;
+    ScheduleEventLog* sp4C;
     s32 sp48;
     s32 sp44;
     s32 sp40;
@@ -520,15 +520,15 @@ void uvDbg_80232ECC(s32 arg0, s32 arg1, u16 arg2, u8 arg3, u8 arg4, u8 arg5) {
             break;
         }
         if (arg0 == 0) {
-            sp4C = &D_802B8940[sp44].unk0[sp48];
+            sp4C = &gSchedCpuEvents[sp44][sp48];
         } else {
-            sp4C = &D_802B92A0[sp44].unk0[sp48];
+            sp4C = &gSchedRspEvents[sp44][sp48];
         }
-        if (sp4C->unk8 == sp34) {
+        if (sp4C->eventID == sp34) {
             break;
         }
-        if (sp4C->unk8 == sp30) {
-            uvDbg_80231F04(0.0f, (f32)(sp4C->unk0 - sp28), arg2, arg3, arg4, arg5);
+        if (sp4C->eventID == sp30) {
+            uvDbg_80231F04(0.0f, (f32)(sp4C->timestamp - sp28), arg2, arg3, arg4, arg5);
             break;
         }
     }
@@ -549,18 +549,18 @@ void uvDbg_80232ECC(s32 arg0, s32 arg1, u16 arg2, u8 arg3, u8 arg4, u8 arg5) {
             break;
         }
         if (arg0 == 0) {
-            sp4C = &D_802B8940[sp44].unk0[sp48];
+            sp4C = &gSchedCpuEvents[sp44][sp48];
         } else {
-            sp4C = &D_802B92A0[sp44].unk0[sp48];
+            sp4C = &gSchedRspEvents[sp44][sp48];
         }
         if (sp40 != sp34) {
-            if (sp4C->unk8 == sp34) {
+            if (sp4C->eventID == sp34) {
                 sp40 = sp34;
-                sp20 = sp4C->unk0;
+                sp20 = sp4C->timestamp;
             }
-        } else if (sp4C->unk8 != sp30) {
+        } else if (sp4C->eventID != sp30) {
         } else {
-            uvDbg_80231F04((f32)(sp20 - sp28), (f32)(sp4C->unk0 - sp28), arg2, arg3, arg4, arg5);
+            uvDbg_80231F04((f32)(sp20 - sp28), (f32)(sp4C->timestamp - sp28), arg2, arg3, arg4, arg5);
             sp40 = -1;
         }
     }

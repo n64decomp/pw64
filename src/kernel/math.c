@@ -33,12 +33,12 @@ f32 uvSqrtF(f32 value) {
 }
 
 f32 uvSinF(f32 x) {
-    f64 dx;   // sp20
-    f64 xsq;  // sp18
-    f64 poly; // sp10
+    f64 dx;
+    f64 xsq;
+    f64 poly;
     f64 temp_fa1;
-    s32 number; // sp8
-    s32 ix;     // sp4
+    s32 number;
+    s32 ix;
 
     ix = *(s32*)&x;
 
@@ -110,10 +110,12 @@ f32 uvCosF(f32 x) {
             return -(f32)((dx * xsq) * temp_fa1 + dx);
         }
     }
+
     // NaN check
     if (x != x) {
         return 2.1401436e9f;
     }
+
     return 0.0f;
 }
 

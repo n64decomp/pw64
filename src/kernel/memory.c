@@ -3,6 +3,8 @@
 #include <uv_memory.h>
 #include <uv_graphics.h>
 #include <uv_sprite.h>
+#include <segment_symbols.h>
+#include <macros.h>
 #include <PR/os_exception.h>
 #include <PR/os_pi.h>
 #include <PR/os_system.h>
@@ -33,8 +35,6 @@ s32 D_802B8920[3];
 u32 D_802B892C;
 u32 D_802B8930;
 u32 D_802B8934;
-
-extern u8 kernel_TEXT_START[];
 
 extern u8 D_803805E0;
 
@@ -166,7 +166,7 @@ void _uvMediaCopy(void* vAddr, void* devAddr, u32 nbytes) {
             return;
         }
         if ((s32)dst & 7) {
-            alignCeil = (u8*)((s32)(dst + 7) & ~7);
+            alignCeil = ALIGN8((s32)dst);
             alignDiff = alignCeil - dst;
             if ((nbytes != (u32)alignDiff) != 0) {
                 _uvDMA(alignCeil, src + alignDiff, nbytes - alignDiff);

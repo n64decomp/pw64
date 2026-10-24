@@ -9,6 +9,20 @@
 #define UV_MESG_SCHED   2
 #define UV_MESG_GFX     4
 
+#define EVENT_ID_AUDIO_START 0x29
+#define EVENT_ID_GFX_START 0x2A
+#define EVENT_ID_GFX_DONE 0x2B
+#define EVENT_ID_AUDIO_DONE 0x2C
+#define EVENT_ID_GFX_YIELD 0x2D
+#define EVENT_ID_GFX_SCHED 0x2E
+#define EVENT_ID_AUDIO_SCHED 0x2F
+#define EVENT_ID_GFX_RDP_DONE 0x30
+#define EVENT_ID_YIELD_REQUEST 0x31
+#define EVENT_ID_KERNEL_WAKEUP 0x32
+#define EVENT_ID_USER1 0x33
+#define EVENT_ID_USER2 0x34
+#define EVENT_ID_USER3 0x35
+
 typedef struct Unk8022B0A0 {
     f32 unk0;
     f32 unk4;
@@ -17,17 +31,13 @@ typedef struct Unk8022B0A0 {
 } Unk8022B0A0; // size: 0x10
 
 typedef struct {
-    f64 unk0;
-    s32 unk8;
+    f64 timestamp;
+    s32 eventID;
     u32 unkC;
-} Unk802B92A0_Unk0;
+} ScheduleEventLog;
 
-typedef struct {
-    Unk802B92A0_Unk0 unk0[30];
-} Unk802B92A0;
-
-extern Unk802B92A0 D_802B8940[];
-extern Unk802B92A0 D_802B92A0[];
+extern ScheduleEventLog gSchedCpuEvents[][30];
+extern ScheduleEventLog gSchedRspEvents[][30];
 
 extern OSSched gSchedInst;
 extern s32 D_8024B260;

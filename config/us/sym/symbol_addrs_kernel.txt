@@ -437,6 +437,8 @@ gSiContBuf                = 0x802C32D8;
 gSiContStatus             = 0x802C3358;
 gSiContPattern            = 0x802C3394;
 
+gSchedCpuEvents           = 0x802B8940;
+gSchedRspEvents           = 0x802B92A0;
 gSchedInst                = 0x802C38A8;
 gSchedStack               = 0x802C3BA8;
 gSchedRspStatus           = 0x802B9C69;
