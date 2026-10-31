@@ -156,9 +156,9 @@ void func_8033FAD4(f32 arg0) {
 }
 
 void func_8033FB14(void) {
-    _uvaSoundBegin();
+    uvSoundBegin();
     func_80200308(0);
-    _uvaSoundEnd();
+    uvSoundEnd();
 }
 
 void sndEvent(s32 event, void* data, s32 eventData) {
