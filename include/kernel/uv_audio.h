@@ -71,6 +71,10 @@ typedef struct AMAudioMgr {
     ALGlobals g;
 } AMAudioMgr;
 
+extern ALSndId *gSndVoiceTable;
+extern ALBank* gAudioSXBank;
+extern ALSndPlayer* gSndPlayer;
+
 void uvaManagerInit(void);
 void uvaManager_80204518(s32 arg0);
 void amCreateAudioMgr(ALSynConfig* c, OSPri priority);
@@ -79,7 +83,7 @@ void amCreateAudioMgr(ALSynConfig* c, OSPri priority);
 // Audio Emitter API
 // -----------------------------------------------------------------------------
 
-typedef struct uvaEmitter {
+typedef struct {
 /* 00 */ Mtx4F m1;
 /* 40 */ Vec3F unk40;
 /* 4C */ Vec3F unk4C;
@@ -98,16 +102,19 @@ typedef struct uvaEmitter {
 /* 8F */ u8 unk8F;
 /* 90 */ f32 near;
 /* 94 */ f32 far;
-/* 98 */ s32 attr;
+/* 98 */ s32 attr; // EMITTER_ATTR_*
 /* 9C */ f32 playPitch;
 /* A0 */ s32 playState;
 /* A4 */ s32 playVolume;
-/* A8 */ s32 state;
+/* A8 */ s32 state; // EMITTER_STATE_*
 /* AC */ u8 playVoice;
 /* AD */ u8 playPan;
 /* AE */ u8 playMix;
 /* AF */ u8 playTimeout;
-} uvaEmitter_t;
+} uvaEmitter;
+
+#define EMITTER_STATE_RELEASED 0
+#define EMITTER_STATE_TRIGGERED 0x10
 
 #define EMITTER_ATTR_1          0x01
 #define EMITTER_ATTR_2          0x02
@@ -132,7 +139,7 @@ typedef struct uvaEmitter {
 
 void uvEmitterPrintf(const char* fmt, ...);
 void uvEmitterInitTable(void);
-void uvEmitterInit(uvaEmitter_t* emitter);
+void uvEmitterInit(uvaEmitter* emitter);
 u8   uvEmitterLookup(void);
 void uvEmitterFromModel(u8 emitterId, u8 modelId);
 void uvEmitterSetMatrix(u8 emitterId, Mtx4F* src);
@@ -147,8 +154,8 @@ void uvEmitterProps(u8 emitterId, ...);
 void uvEmitterTrigger(u8 emitterId);
 void uvEmitterRelease(u8 emitterId);
 void uvEmitterStatus(u8 arg0);
-void _uvaSoundBegin(void);
-void _uvaSoundEnd(void);
+void uvSoundBegin(void);
+void uvSoundEnd(void);
 void uvEmitterFlush(u16 arg0);
 void uvEmitter_80201D08(u8 emitterId, u16 arg1);
 void _uvaUpdatePlayList(u8 emitterId);

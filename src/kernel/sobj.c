@@ -94,6 +94,7 @@ u8 uvSobjGetLODIndex(ParsedUVMD* uvmd, f32 dist) {
             return i;
         }
     }
+
     return 0;
 }
 
@@ -277,6 +278,7 @@ u16 uvSobj_8022D1E4(u32 soid) {
     if (temp_v0 == NULL) {
         return 0xFFFF;
     }
+
     return temp_v0->modelId;
 }
 
