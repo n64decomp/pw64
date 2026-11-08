@@ -1,5 +1,6 @@
 ipl3checksum>=1.0.0,<2.0.0
 splat64[mips]==0.39.1
+crunch64>=0.6.1
 mapfile_parser>=2.12.1,<3.0.0
 GitPython
 

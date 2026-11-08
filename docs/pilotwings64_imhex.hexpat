@@ -96,11 +96,23 @@ fn format_Vec3F(Vec3F v) {
 
 struct Vec4F {
     f32 x, y, z, w;
-} [[static]]; // size = 0x10
+} [[static, format("format_Vec4F")]]; // size = 0x10
+
+fn format_Vec4F(Vec4F v) {
+    return std::format("[ {}, {}, {}, {} ]", v.x, v.y, v.z, v.w);
+};
 
 struct Mtx4F {
     f32 m[16];
-} [[static]]; // size = 0x40
+} [[static, format("format_Mtx4F")]]; // size = 0x40
+
+fn format_Mtx4F(Mtx4F m) {
+    return std::format("| {}, {}, {}, {} |\n| {}, {}, {}, {} |\n| {}, {}, {}, {} |\n| {}, {}, {}, {} |",
+        m.m[0], m.m[1], m.m[2], m.m[3],
+        m.m[4], m.m[5], m.m[6], m.m[7],
+        m.m[8], m.m[9], m.m[10], m.m[11],
+        m.m[12], m.m[13], m.m[14], m.m[15]);
+};
 
 // --- UV kernel types
 struct UVSY {
@@ -212,17 +224,17 @@ struct UVLV {
 };
 
 
-struct UVSQ_Unk4 {
-    u16 unk0;
-    f32 unk4;
+struct uvSeqFrame {
+    u16 textureId;
+    f32 frameTime;
 } [[static]]; // size = 0x6
 
 struct UVSQ {
-    u8 count;
-    UVSQ_Unk4 unk4[count];
-    u8 unk8;
-    u8 unk9;
-    f32 unkC;
+    u8 frameCount;
+    uvSeqFrame frameTable[frameCount];
+    u8 mode;
+    u8 reverse;
+    f32 framerate;
 };
 
 
@@ -343,8 +355,8 @@ struct ADAT {
 
 
 struct PDAT_PHDR {
-    s32 unk0;
     s32 duration;
+    s32 pposCount;
 } [[static]]; // size = 0x8
 
 struct PDAT_PPOS {
@@ -378,9 +390,9 @@ struct PDAT {
     match (tag) {
         ("PAD "): u8 pad[length] [[hidden]];
         ("PHDR"): PDAT_PHDR phdr;
-        ("PPOS"): PDAT_PPOS pos[while($ - Start < length)];
+        ("PPOS"): PDAT_PPOS pos;
         ("RHDR"): PDAT_RHDR rhdr;
-        ("RPKT"): PDAT_RPKT rpkt[while($ - Start < length)];
+        ("RPKT"): PDAT_RPKT rpkt;
         (_): u8 data[length];
     }
     padding[while (($ - Start) < length)]; // length is always to 8-bytes, not offsets
@@ -400,7 +412,7 @@ struct SPTH {
         ("PAD "): u8 pad[length] [[hidden]];
         ("SCPH"): SPTH_SCP scph;
         ("SCPP"): SPTH_SCP scpp;
-        ("SCPR"): SPTH_SCP scpp;
+        ("SCPR"): SPTH_SCP scpr;
         ("SCPX"): SPTH_SCP scpx;
         ("SCPY"): SPTH_SCP scpy;
         ("SCPZ"): SPTH_SCP scpz;
@@ -443,7 +455,7 @@ struct LevelESND {
     Mtx4F unk0;
     Vec3F unk40;
     Vec3F unk4C;
-    s8 unk58;
+    u8 sndId;
     u8 pad59[3];
     f32 unk5C;
     f32 unk60;
@@ -514,6 +526,19 @@ struct UPWL {
 };
 
 // --- UV user types
+struct TaskObjects_Unk10 {
+    Vec3F unk0;
+    f32 unkC;
+    f32 unk10;
+    f32 unk14;
+    f32 unk18;
+} [[static]]; // size = 0x1C
+
+struct TaskObjUnk2C {
+    Vec3F unk0;
+    Vec3F unkC;
+} [[static]]; // size = 0x18
+
 struct Unk803599D0 {
     s32 unk0;
     f32 unk4;
@@ -539,36 +564,31 @@ struct Unk803599D0 {
 } [[static]]; // size = 0x54
 
 struct Unk80345C80 {
-    Unk803599D0 unk0;
-    Unk803599D0 unk54;
-    Unk803599D0 unkA8;
-    Unk803599D0 unkFC;
-    Unk803599D0 unk150;
-    u8 pad1A4[0x3B4-0x1A4];
+    Unk803599D0 unk0[11];
+    u8 unk39C[0x3B4-0x39C];
     s32 unk3B4;
     s32 unk3B8;
     f32 unk3BC;
     f32 unk3C0;
-    f32 unk3C4;
-    f32 unk3C8;
+    f32 unk3C4; // stored to D_8034F1C4 (s32)
+    f32 unk3C8; // stored to D_8034F1C0 (f32)
 } [[static]]; // size = 0x3CC
 
 struct UPWT_COMM {
-    u8 classNum;
-    u8 vehNum;
-    u8 testNum;
-    u8 unk3;
-    u8 unk4;
-    u8 unk5[0x3];
-    u8 unk8[4];
-    u8 unkC[4];
-    s32 unk10;
-    u8 unk14[0x18];
-    s32 unk2C;
-    u8 unk30[0x14];
+    u8 classId;
+    u8 vehId;
+    u8 testId;
+    u8 mapId;
+    u8 unk4; // values [0-4]
+    padding[3];
+    u8 unk8[4]; // array of IDs [0: env or "cond"?, 1: enable snow?]
+    f32 unkC;
+    TaskObjects_Unk10 unk10;
+    TaskObjUnk2C unk2C;
     f32 unk44;
     Unk80345C80 unk48;
-    u8 unk414[8];
+    u8 unk414[4];
+    f32 unk418;
     u8 countTHER;
     u8 countLWIN;
     u8 countTPAD;
@@ -707,10 +727,10 @@ struct TaskHPAD {
     s32 unk18;
     HPADType type;
     u8 points;
-    u8 pad1E[2];
+    padding[2];
     f32 fuelAdded;
     u8 nextHpadCount [[comment("number of HPADs to activate")]];
-    u8 pad25[3];
+    padding[3];
     s32 nextHpads[5] [[comment("array of HPADs to activate")]];
     u8 active [[comment("active at start")]];
     padding[3];
@@ -751,9 +771,7 @@ struct TaskLWIN {
 
 // OBSV is not actually present in FS, but is decoded in code
 struct TaskOBSV {
-    f32 x;
-    f32 y;
-    f32 z;
+    Vec3F unk0;
     f32 unkC;
 } [[static]]; // size = 0x10
 
@@ -769,7 +787,7 @@ struct TaskRNGS {
     Vec3F pos [[comment("position vector")]];
     Vec3F rot [[comment("rotation vector (degrees)")]];
     s32 unk18;
-    padding[1];
+    u8 unk1C;
     u8 childCount;
     padding[2];
     s32 childRings[5];
@@ -807,6 +825,7 @@ struct TaskTARG {
     Vec3F rot;
     u8 targetType;
     u8 unk19;
+    padding[2];
     s32 pad1C;
 } [[static]]; // size = 0x20
 
@@ -916,6 +935,7 @@ struct FORM {
 N64Header N64Header @ 0x00;
 
 // --------- Filesystem
+FORM uvrm @ 0xDE720;
 FORM uvsy @ 0xDF5B0;
 FORM uven @ 0xDF5F8;
 // ignore UVLT @ 0xDFD70 because it is empty
@@ -929,7 +949,7 @@ FORM uvtx[463] @ 0x240100;
 FORM uvan[115] @ 0x3085DC;
 FORM uvft[9] @ 0x32C3F8;
 FORM upwl[4] @ 0x33020C;
-FORM spth0 @ 0x342B7C;
+FORM spth0[1] @ 0x342B7C;
 FORM upwt[61] @ 0x342E2C;
 FORM adat0 @ 0x35C08C;
 FORM spth1[5] @ 0x36E214;

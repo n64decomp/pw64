@@ -71,6 +71,8 @@ SPLAT       := $(PYTHON) -m splat split
 SPLAT_YAML  := config/$(VERSION)/$(BASENAME).$(VERSION).yaml
 SPLAT_FLAGS :=
 
+FILESYS_GEN := $(PYTHON) tools/pw64_filesys_gen.py
+
 # ------------------------------------------------------------------------------
 # Inputs
 # ------------------------------------------------------------------------------
@@ -78,6 +80,7 @@ SPLAT_FLAGS :=
 ASM_DIR = asm
 BIN_DIR = bin
 SRC_DIR = src
+FILESYS_DIR = $(BIN_DIR)/filesys
 
 ASM_DIRS := $(shell find $(ASM_DIR) -type d -not -path "asm/nonmatchings/*")
 BIN_DIRS := $(shell find $(BIN_DIR) -type d)
@@ -86,6 +89,9 @@ SRC_DIRS := $(shell find $(SRC_DIR) -type d)
 S_FILES := $(foreach dir,$(ASM_DIRS) $(SRC_DIRS),$(wildcard $(dir)/*.s))
 B_FILES := $(foreach dir,$(BIN_DIRS),$(wildcard $(dir)/*.bin))
 C_FILES := $(foreach dir,$(SRC_DIRS),$(wildcard $(dir)/*.c))
+
+FS_FILES := $(wildcard $(FILESYS_DIR)/*.yaml $(FILESYS_DIR)/*.raw)
+FS_BINS := $(BIN_DIR)/filetable.bin $(BIN_DIR)/filesys.bin
 
 # ------------------------------------------------------------------------------
 # Outputs
@@ -103,8 +109,9 @@ LD_SCRIPT := $(BUILD_DIR)/$(BASENAME).$(VERSION).ld
 S_O_FILES := $(foreach file,$(S_FILES:.s=.o),$(BUILD_DIR)/$(file))
 B_O_FILES := $(foreach file,$(B_FILES:.bin=.o),$(BUILD_DIR)/$(file))
 C_O_FILES := $(foreach file,$(C_FILES:.c=.o),$(BUILD_DIR)/$(file))
+FS_O_FILES := $(foreach file,$(FS_BINS:.bin=.o),$(BUILD_DIR)/$(file))
 
-O_FILES := $(C_O_FILES) $(S_O_FILES) $(B_O_FILES)
+O_FILES := $(C_O_FILES) $(S_O_FILES) $(B_O_FILES) $(FS_O_FILES)
 
 DEP_FILES := $(C_O_FILES:.o=.d)
 
@@ -295,6 +302,10 @@ $(BUILD_DIR)/$(LIBULTRA): $(LIBULTRA)
 $(BUILD_DIR)/%.o: %.s
 	@printf "[$(GREEN)   as   $(NO_COL)]  $<\n"
 	$(V)$(CPP) $(CPPFLAGS) $(INCLUDE_CFLAGS) -I $(dir $*) $(ASM_DEFINES) $< | $(AS) $(ASFLAGS) $(INCLUDE_CFLAGS) -o $@ -
+
+$(FS_BINS) &: $(FS_FILES)
+	@printf "[$(CYAN)  fsys  $(NO_COL)]  $<\n"
+	$(V)$(FILESYS_GEN) --stats
 
 $(BUILD_DIR)/%.o: %.bin
 	@printf "[$(PINK) linker $(NO_COL)]  $<\n"

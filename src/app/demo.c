@@ -10,7 +10,7 @@
 
 typedef struct {
     s32 test;
-    u8 pad4[4];
+    s32 unk4; // unused, but set in range [0-5]
     s32 cls;
     s32 veh;
     s32 unk10;

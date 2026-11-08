@@ -231,7 +231,7 @@ typedef struct {
     Vec3F pos;
     Vec3F angle;
     s32 unk18;
-    u8 pad1C[1];
+    u8 unk1C;
     u8 childCount;
     u8 pad1E[2];
     s32 childRings[5];
@@ -268,6 +268,7 @@ typedef struct {
     Vec3F rot;
     u8 targetType;
     u8 unk19;
+    u8 pad1A[2];
     s32 pad1C;
 } TaskTARG; // size = 0x20
 
@@ -326,28 +327,29 @@ typedef struct {
     f32 unk10;
     f32 unk14;
     f32 unk18;
-} TaskObjects_Unk10;
+} TaskObjects_Unk10; // size = 0x1C
 
 typedef struct {
     Vec3F unk0;
     Vec3F unkC;
-} TaskObjUnk2C;
+} TaskObjUnk2C; // size = 0x18
 
 typedef struct {
     struct {
         u8 classNum;
         u8 vehNum;
         u8 testNum;
-        u8 unk3;
+        u8 mapId;
         u8 unk4;
         u8 unk5[0x3];
         u8 unk8[4];
-        u8 unkC[4];
+        f32 unkC;
         TaskObjects_Unk10 unk10;
         TaskObjUnk2C unk2C;
         f32 unk44;
         Unk80345C80 unk48;
-        u8 unk40C[8];
+        u8 unk414[4];
+        f32 unk418;
         u8 countTHER;
         u8 countLWIN;
         u8 countTPAD;
