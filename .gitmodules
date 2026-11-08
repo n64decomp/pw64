@@ -19,3 +19,6 @@
 [submodule "tools/ultralib"]
 	path = tools/ultralib
 	url = https://github.com/decompals/ultralib.git
+[submodule "libultraship"]
+	path = libultraship
+	url = https://github.com/Kenix3/libultraship.git
