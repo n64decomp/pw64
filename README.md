@@ -1,17 +1,9 @@
-[![Build](https://github.com/gcsmith/Pilotwings64Decomp/actions/workflows/regress-internal.yaml/badge.svg)](https://github.com/gcsmith/Pilotwings64Decomp/actions/workflows/regress-internal.yaml)
+[![Build](https://github.com/n64decomp/pw64/actions/workflows/regress-internal.yaml/badge.svg)](https://github.com/n64decomp/pw64/actions/workflows/regress-internal.yaml)
 [![Discord](https://img.shields.io/discord/1465499203831730191?color=%237289DA&logo=discord&logoColor=%23FFFFFF)](https://discord.gg/bkrYXSjrKE)
 
-[![Code](https://decomp.dev/n64decomp/pw64/us.svg?mode=shield&measure=code&label=US%20Code%20Bytes)](https://decomp.dev/gcsmith/Pilotwings64Decomp)
-[![Data](https://decomp.dev/n64decomp/pw64/us.svg?mode=shield&measure=data&label=US%20Data%20Bytes)](https://decomp.dev/gcsmith/Pilotwings64Decomp)
-[![Functions](https://decomp.dev/n64decomp/pw64/us.svg?mode=shield&measure=matched_functions&label=US%20Functions)](https://decomp.dev/gcsmith/Pilotwings64Decomp)
+# Pilotwings 64 Decomp
 
-[![Code](https://decomp.dev/n64decomp/pw64/jp.svg?mode=shield&measure=code&label=JP%20Code%20Bytes)](https://decomp.dev/gcsmith/Pilotwings64Decomp)
-[![Data](https://decomp.dev/n64decomp/pw64/jp.svg?mode=shield&measure=data&label=JP%20Data%20Bytes)](https://decomp.dev/gcsmith/Pilotwings64Decomp)
-[![Functions](https://decomp.dev/n64decomp/pw64/jp.svg?mode=shield&measure=matched_functions&label=JP%20Functions)](https://decomp.dev/gcsmith/Pilotwings64Decomp)
-
-# Pilotwings64Decomp
-
-This repo contains a work-in-progress **matching decompilation** of Pilotwings 64, currently supporting the following releases: North America (U).
+This repo contains a **matching decompilation** of Pilotwings 64, currently supporting the following releases: Japan (J), North America (U).
 
 The purpose of this project is to produce a reconstruction of the high-level source code through reverse engineering.
 
@@ -19,12 +11,21 @@ The purpose of this project is to produce a reconstruction of the high-level sou
 > This repository does not contain any game assets, assembly code, or other copyrighted materials.
 > You must provide your own legally-obtained copy of the game in order to extract the assets necessary to build this repository.
 
+## Versions
+
+| Region | SHA1 | Code | Data | Functions |
+|--------|------|------|------|-----------|
+| (U)    | `ec771aedf54ee1b214c25404fb4ec51cfd43191a` | [![Code](https://decomp.dev/n64decomp/pw64/us.svg?mode=shield&measure=code&label=)](https://decomp.dev/n64decomp/pw64) | [![Data](https://decomp.dev/n64decomp/pw64/us.svg?mode=shield&measure=data&label=)](https://decomp.dev/n64decomp/pw64) | [![Functions](https://decomp.dev/n64decomp/pw64/us.svg?mode=shield&measure=matched_functions&label=)](https://decomp.dev/n64decomp/pw64) |
+| (J)    | `892a5472d9a6811b881d093020de81f72baeeec9` | [![Code](https://decomp.dev/n64decomp/pw64/jp.svg?mode=shield&measure=code&label=)](https://decomp.dev/n64decomp/pw64) | [![Data](https://decomp.dev/n64decomp/pw64/jp.svg?mode=shield&measure=data&label=)](https://decomp.dev/n64decomp/pw64) | [![Functions](https://decomp.dev/n64decomp/pw64/jp.svg?mode=shield&measure=matched_functions&label=)](https://decomp.dev/n64decomp/pw64) |
+| (E)    | Unsupported | 0% | 0% | 0 |
+
+
 # Quick Start
 See the [Development](#development) section below for full details on different systems. For Debian/Ubuntu, the following steps can be taken to quickly get going:
 ```bash
+$ git clone --recurse-submodules https://github.com/n64decomp/pw64.git
+$ cd pw64
 $ sudo xargs -a packages.txt apt-get install -y
-$ git clone --recurse-submodules https://github.com/gcsmith/Pilotwings64Decomp.git
-$ cd Pilotwings64Decomp
 $ python3 -m venv .venv
 $ source ./.venv/bin/activate
 $ python3 -m pip install -r requirements.txt
@@ -84,14 +85,8 @@ $ source ./.venv/bin/activate
 $ python3 -m pip install -r requirements.txt
 ```
 
-Example setup with uv:
-```bash
-$ uv venv
-$ uv pip install -r requirements.txt
-```
-
 ## Setup
-1. Place an unmodified Pilotwings 64 ROM into the root of the repository as `baserom.us.z64` (SHA1SUM: `ec771aedf54ee1b214c25404fb4ec51cfd43191a`).
+1. Place an unmodified Pilotwings 64 ROM into the root of the repository as `baserom.us.z64` or `baserom.jp.z64` (sha1sum must match Versions table above)
 2. Set up dependencies
     - `make dependencies`
 3. Init project

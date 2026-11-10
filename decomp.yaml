@@ -1,5 +1,5 @@
 name: Pilotwings 64
-repo: https://github.com/gcsmith/Pilotwings64Decomp
+repo: https://github.com/n64decomp/pw64
 platform: n64
 versions:
 - name: us
