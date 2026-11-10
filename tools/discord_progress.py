@@ -21,7 +21,7 @@ def main(args):
         "embeds": [{
             "title": f"{commit_msg}",
             "description": f"{progress_msg}",
-            "url": f"https://github.com/gcsmith/Pilotwings64Decomp/commit/{commit.hexsha}",
+            "url": f"https://github.com/n64decomp/pw64/commit/{commit.hexsha}",
             "color": commit.authored_date & 0xFFFFFF
         }]
     }
