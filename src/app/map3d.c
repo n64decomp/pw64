@@ -5,12 +5,10 @@
 #include <uv_math.h>
 #include <uv_matrix.h>
 #include <uv_sprite.h>
-#include <uv_system.h>
 #include <uv_vector.h>
 #include "balls.h"
 #include "code_D1ED0.h"
 #include "demo.h"
-#include "game.h"
 #include "falco.h"
 #include "ferry.h"
 #include "fountain.h"
@@ -59,16 +57,6 @@ STATIC_DATA f32 sMapGlobalScale;
 void map3d_803123C4(f32, f32);
 void map3d_80312514(void);
 void map3dAddItem(s32, f32 x, f32 y, f32 z);
-
-void app_entrypoint(void) {
-    uvSysInit(0);
-    uvGfxEnableGamma(0);
-    gameInit();
-    while (demo_80323020() != 0) {
-        gameUpdate();
-    }
-    uvSysUnknownStub(0);
-}
 
 void map3dMain(Unk80362690* arg0, s32 arg1) {
     map3dLoad(arg0, arg1);
