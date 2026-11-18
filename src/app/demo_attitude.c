@@ -17,8 +17,8 @@ typedef struct {
 } PPOS;
 
 typedef struct {
-    s32 unk0;
-    s32 unk4;
+    s32 duration;
+    s32 pposCount;
 } PHDR;
 
 typedef struct Unk8034F970 {
@@ -61,8 +61,8 @@ void demoAttLoadPos(void) {
         switch (tag) {
         case 'PHDR': // 0x50484452
             phdr = (PHDR*)data;
-            D_8036D320 = phdr->unk0;
-            D_8036D324 = phdr->unk4;
+            D_8036D320 = phdr->duration;
+            D_8036D324 = phdr->pposCount;
             D_8034F970 = (Unk8034F970*)_uvMemAllocAlign8(D_8036D324 * sizeof(Unk8034F970));
             if (D_8034F970 == NULL) {
                 return;

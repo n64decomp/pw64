@@ -16,7 +16,7 @@ STATIC_DATA f32 D_803506A0[] = {
     0.0f, 0.0f, 0.0f, 0.0f,  17.0f, 0.0f, 0.0f, 0.0f, 0.0f,  18.0f, 0.0f,  0.0f, 0.01f, 0.15f,  18.5f, 0.0f,  0.01f, 0.03f, 0.25f, 19.0f,
     0.0f, 0.0f, 0.0f, 0.65f, 19.5f, 0.0f, 0.0f, 0.0f, 0.96f, 20.0f, 0.0f,  0.0f, 0.0f,  0.99f,  24.0f, 0.0f,  0.0f,  0.0f,  1.0f,
 };
-TaskObjects* D_8035078C = 0;
+TaskObjects* D_8035078C = NULL;
 
 TaskTARG* sRefTARG;
 u8 sMissileTargetCount;

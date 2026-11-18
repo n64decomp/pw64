@@ -227,7 +227,7 @@ s32 taskInitTest(s32 classIdx, s32 vehicle, s32 testIdx, u16* map, u16* terraId,
     sTaskVehicleU8 = (u8)vehicle;
     sTaskTestU8 = (u8)testIdx;
 
-    *map = sTaskMapLookup[D_8035078C->comm.unk3];
+    *map = sTaskMapLookup[D_8035078C->comm.mapId];
     switch (*map) {
     case MAP_CRESCENT_ISLAND:
         *terraId = 1;
