@@ -34,7 +34,7 @@ jobs:
           SECRET_BASENAME: pilotwings
           SECRET_VERSION: ${{ matrix.version }}
     - name: Install Packages
-      run: sudo apt-get install -y git make git build-essential binutils-mips-linux-gnu python3 python3-pip
+      run: sudo apt update && sudo apt install -y git make git build-essential binutils-mips-linux-gnu python3 python3-pip
     - name: Build Dependencies
       run: make dependencies
     - name: Build
