@@ -34,7 +34,7 @@ OSMesg gSiContBuf[3];
 OSMesgQueue gSiContQ;
 OSMesgQueue D_802C3300;
 OSMesg D_802C3318[1];
-s32 D_802C331C;
+s32 gFaultedPC;
 OSMesg gPiMgrCmdBuf[8];
 OSMesgQueue gPiMgrCmdQ;
 OSContStatus gSiContStatus[MAXCONTROLLERS];
@@ -59,9 +59,8 @@ s32 osPiRawReadIo(u32 devAddr, u32* data);
 
 void Thread_App(void* arg);
 void Thread_Kernel(void* arg);
-void Thread_Render(void* arg);
-void app_entrypoint(s32);
-void func_8022E558(void);
+void Thread_FaultRender(void* arg);
+void appEntrypoint(void* arg);
 
 void func_8020F9F4(void);
 
@@ -246,64 +245,60 @@ void bootproc(void* arg0) {
     osStartThread(&gKernelThread);
 }
 
-void func_8022E558(void) {
-    s16 temp_s3;
-    s16 temp_s4;
-    s16 spBA;
-    u8 var_fp;
-    u8 var_s6;
-    u8 var_s7;
-    Mtx4F sp74;
+void uvFaultRender(void) {
+    s16 x;
+    s16 y;
+    s16 i;
+    u8 r;
+    u8 b;
+    u8 g;
+    Mtx4F mtx;
 
     uvGfxStatePush();
-    uvGfxSetFlags(0xFFF);
+    uvGfxSetFlags(GFX_STATE_TEXTURE_MASK);
     uvGfxClearFlags(GFX_STATE_XLU | GFX_STATE_ZBUFFER | GFX_STATE_CULL_BACK);
-    uvMat4SetOrtho(&sp74, 0.0f, SCREEN_WIDTH, 0.0f, SCREEN_HEIGHT);
-    uvGfxMtxProjPushF(&sp74);
-    uvMat4SetIdentity(&sp74);
-    uvGfxPushMtxUnk(&sp74);
+    uvMat4SetOrtho(&mtx, 0.0f, SCREEN_WIDTH, 0.0f, SCREEN_HEIGHT);
+    uvGfxMtxProjPushF(&mtx);
+    uvMat4SetIdentity(&mtx);
+    uvGfxPushMtxUnk(&mtx);
     uvVtxBeginPoly();
-    uvVtx(0xF, 0xF, 0, 0, 0, 0, 0x80, 0, 0xFF);
-    uvVtx(0x50, 0xF, 0, 0, 0, 0, 0x80, 0, 0xFF);
-    uvVtx(0x50, 0x8C, 0, 0, 0, 0, 0x80, 0, 0xFF);
-    uvVtx(0xF, 0x8C, 0, 0, 0, 0, 0x80, 0, 0xFF);
+    // green bounding rectangle
+    uvVtx(15, 15, 0, 0, 0, 0, 0x80, 0, 0xFF);
+    uvVtx(80, 15, 0, 0, 0, 0, 0x80, 0, 0xFF);
+    uvVtx(80, 140, 0, 0, 0, 0, 0x80, 0, 0xFF);
+    uvVtx(15, 140, 0, 0, 0, 0, 0x80, 0, 0xFF);
     uvVtxEndPoly();
-
-    for (spBA = 0; spBA < 32; spBA++) {
-        if (D_802C331C & (1 << (0x1F - spBA))) {
-            var_s6 = 0xFF;
-            var_s7 = 0xFF;
-            var_fp = 0xFF;
+    // 4x8 white/black squares representing faulting PC address
+    for (i = 0; i < 32; i++) {
+        if (gFaultedPC & (1 << (31 - i))) {
+            r = g = b = 0xFF;
         } else {
-            var_s6 = 0;
-            var_s7 = 0;
-            var_fp = 0;
+            r = g = b = 0x00;
         }
         uvVtxBeginPoly();
-        temp_s3 = ((spBA % 4) * 15) + 20;
-        temp_s4 = (((0x1F - spBA) / 4) * 15) + 20;
-        uvVtx(temp_s3, temp_s4, 0, 0, 0, var_fp, var_s7, var_s6, 0xFF);
-        uvVtx(temp_s3 + 10, temp_s4, 0, 0, 0, var_fp, var_s7, var_s6, 0xFF);
-        uvVtx(temp_s3 + 10, temp_s4 + 10, 0, 0, 0, var_fp, var_s7, var_s6, 0xFF);
-        uvVtx(temp_s3, temp_s4 + 10, 0, 0, 0, var_fp, var_s7, var_s6, 0xFF);
+        x = ((i % 4) * 15) + 20;
+        y = (((31 - i) / 4) * 15) + 20;
+        uvVtx(x, y, 0, 0, 0, r, g, b, 0xFF);
+        uvVtx(x + 10, y, 0, 0, 0, r, g, b, 0xFF);
+        uvVtx(x + 10, y + 10, 0, 0, 0, r, g, b, 0xFF);
+        uvVtx(x, y + 10, 0, 0, 0, r, g, b, 0xFF);
         uvVtxEndPoly();
     }
-
     uvGfxMtxViewPop();
     uvGfxStatePop();
 }
 
-void Thread_Render(void* arg) {
-    void* sp1C;
+void Thread_FaultRender(void* arg) {
+    OSMesg mesg;
 
-    sp1C = NULL;
+    mesg = NULL;
     osCreateMesgQueue(&D_802C3300, D_802C3318, 1);
     osSetEventMesg(OS_EVENT_FAULT, &D_802C3300, (void*)0x10);
-    osRecvMesg(&D_802C3300, &sp1C, OS_MESG_BLOCK);
-    D_802C331C = __osGetCurrFaultedThread()->context.pc;
+    osRecvMesg(&D_802C3300, &mesg, OS_MESG_BLOCK);
+    gFaultedPC = __osGetCurrFaultedThread()->context.pc;
     while (1) {
         uvGfxBegin();
-        func_8022E558();
+        uvFaultRender();
         uvGfxEnd();
     }
 }
@@ -311,13 +306,13 @@ void Thread_Render(void* arg) {
 void Thread_App(void* arg) {
     _uvMediaCopy(app_TEXT_START, app_ROM_START, app_ROM_END - app_ROM_START);
     uvMemSet(app_BSS_START, 0, app_BSS_END - app_BSS_START);
-    app_entrypoint(arg);
+    appEntrypoint(arg);
 }
 
 void Thread_Kernel(void* arg) {
     osCreatePiManager(OS_PRIORITY_PIMGR, &gPiMgrCmdQ, gPiMgrCmdBuf, 8);
     osCreateMesgQueue(&gPiDmaQ, gPiDmaBuf, 1);
-    osCreateThread(&gRenderThread, 0, Thread_Render, NULL, gRenderThreadStack + sizeof(gRenderThreadStack), 0xFA);
+    osCreateThread(&gRenderThread, 0, Thread_FaultRender, NULL, gRenderThreadStack + sizeof(gRenderThreadStack), 0xFA);
     osStartThread(&gRenderThread);
     uvSetVideoMode();
     osCreateThread(&gAppThread, 6, Thread_App, arg, gAppThreadStack + sizeof(gAppThreadStack), 0xA);

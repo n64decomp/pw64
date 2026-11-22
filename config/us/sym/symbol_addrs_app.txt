@@ -252,7 +252,8 @@ fireFxDeinit          = 0x802EA824; // type:func
 
 hsound_callback       = 0x8030A390; // type:func
 
-app_entrypoint        = 0x8030FE20; // type:func
+appEntrypoint         = 0x8030FE20; // type:func
+
 map3dMain             = 0x8030FE80; // type:func
 map3dLoad             = 0x8030FF00; // type:func
 map3dHandler          = 0x80311660; // type:func

@@ -596,7 +596,8 @@ func_8030EA54       = 0x803012E8; // type:func
 func_8030F448       = 0x80301CDC; // type:func
 func_8030F818       = 0x80302084; // type:func
 
-app_entrypoint      = 0x80302690; // type:func
+appEntrypoint       = 0x80302690; // type:func
+
 map3dMain           = 0x803026F0; // type:func
 map3dLoad           = 0x80302770; // type:func
 map3dHandler        = 0x80303EAC; // type:func

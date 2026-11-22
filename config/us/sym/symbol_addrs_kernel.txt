@@ -7,7 +7,8 @@
 entrypoint          = 0x80200050; // type:func use_non_matching_label:False
 bootproc            = 0x8022E440; // type:func
 
-Thread_Render       = 0x8022E874; // type:func
+uvFaultRender       = 0x8022E558; // type:func
+Thread_FaultRender  = 0x8022E874; // type:func
 Thread_App          = 0x8022E920; // type:func
 Thread_Kernel       = 0x8022E980; // type:func
 
@@ -413,6 +414,8 @@ gMatrixStack              = 0x802B81E0;
 gRandLcgState             = 0x8024B2C0;
 gRanluxState1             = 0x8024B2C4;
 gRanluxState2             = 0x8024B2C8;
+
+gFaultedPC                = 0x802C331C;
 
 gKernelThread             = 0x802C36F8;
 gKernelThreadStack        = 0x802BBC90;
